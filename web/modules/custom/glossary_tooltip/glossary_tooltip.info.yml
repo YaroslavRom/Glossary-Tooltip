@@ -1,0 +1,5 @@
+name: 'Glossary tooltip 2'
+type: module
+description: 'Glossary Tooltip module that adds description to terms.'
+package: 'Glossary Tooltip '
+core_version_requirement: ^9 ||^10

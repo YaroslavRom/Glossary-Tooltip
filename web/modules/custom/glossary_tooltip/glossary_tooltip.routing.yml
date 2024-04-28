@@ -1,0 +1,7 @@
+glossary_tooltip.glossary_tooltip:
+  path: '/glossary-tooltip/add'
+  defaults:
+    _title: 'Glossary Tooltip Form'
+    _form: 'Drupal\glossary_tooltip\Form\GlossaryTooltipForm'
+  requirements:
+    _permission: 'access content'

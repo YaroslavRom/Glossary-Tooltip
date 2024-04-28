@@ -1,0 +1,57 @@
+<?php
+// @TODO  Fix missing description
+/**
+ * Implements hook_install().
+ */
+function glossary_tooltip_install() {
+  // Define quota and initialize word counter.
+  $quota = 10;
+  $words_with_definitions = [];
+
+  // Continue fetching random words until the quota is met.
+  while (count($words_with_definitions) < $quota) {
+    // Fetch random words from the first API endpoint.
+    $response = \Drupal::httpClient()->get('https://random-word-api.herokuapp.com/word?number=10');
+    $data = json_decode($response->getBody(), TRUE);
+
+    // Check each word against the second API endpoint.
+    foreach ($data as $word) {
+      // If we have enough words, break out of the loop.
+      if (count($words_with_definitions) >= $quota) {
+        break 2; // Break out of both foreach and while loops.
+      }
+
+      try {
+        $response = \Drupal::httpClient()->get('https://api.dictionaryapi.dev/api/v2/entries/en/' . $word);
+        $word_data = json_decode($response->getBody(), TRUE);
+
+        // If the response contains a definition, save the word to the taxonomy.
+        if (!empty($word_data[0]['meanings'])) {
+          // Check if the taxonomy term already exists.
+          $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => $word]);
+          if (empty($terms)) {
+            // Create a new taxonomy term.
+            $term = \Drupal\taxonomy\Entity\Term::create([
+              'vid' => 'glossary_tooltip', // Machine name of the vocabulary.
+              'name' => $word,
+            ]);
+            $term->save();
+          } else {
+            $term = reset($terms);
+          }
+          // Save word and definition for further processing.
+          $words_with_definitions[$word] = $word_data[0]['meanings'];
+        }
+      } catch (\GuzzleHttp\Exception\ClientException $e) {
+        // Log the error.
+        \Drupal::logger('glossary_tooltip')->error('Error fetching definition for word "@word": @error', [
+          '@word' => $word,
+          '@error' => $e->getMessage(),
+        ]);
+      }
+    }
+  }
+
+  // Enable the module programmatically.
+  \Drupal::service('module_installer')->install(['glosarry_tooltip']);
+}
