@@ -53,5 +53,5 @@ function glossary_tooltip_install() {
   }
 
   // Enable the module programmatically.
-  \Drupal::service('module_installer')->install(['glosarry_tooltip']);
+  \Drupal::service('module_installer')->install(['glossary_tooltip']);
 }

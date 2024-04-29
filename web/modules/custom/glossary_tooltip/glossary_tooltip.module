@@ -4,37 +4,38 @@
  */
 function glossary_tooltip_preprocess_node(array &$variables) {
   // Marker 1: Check if the node belongs to the "article" content type and has a "field_test" field.
-  print_r('1');
   $node = $variables['node'];
   $build = &$variables['content'];
 
   // Check if the node type is "article" and the field "field_test" exists.
   if ($node->getType() === 'article' && isset($build['field_test'])) {
-    print_r('2');
     // Get the node content.
     $content_items = $build['field_test'];
 
     // Ensure the field items are an array.
     if (is_array($content_items)) {
-      print_r('3');
       // Retrieve glossary terms.
       $terms = glossary_tooltip_get_glossary_terms();
 
       // Scan node content for glossary terms.
       foreach ($terms as $term) {
-        print_r('4');
         // Check if the term exists in the node content.
         $term_name = $term->name;
         $term_description = isset($term->description__value) ? $term->description__value : '';
 
-        foreach ($content_items as &$content_item) {
-          print_r('5');
-          // Marker 5: Check if the content item is an array and has a #markup property.
-          if (is_array($content_item) && isset($content_item['#markup']) && is_string($content_item['#markup'])) {
-            print_r('6');
-            // Replace term occurrences with term + description.
-            $content_item['#markup'] = preg_replace('/\b' . preg_quote($term_name, '/') . '\b/', "$0 ($term_description)", $content_item['#markup']);
-          }
+        // Marker 5: Check if the content item is an array and has a #markup property.
+//        $updatedDescription = htmlspecialchars_decode("<div class='term-description'>$term_description</div>");
+        $updatedTerm = strip_tags($term_name);
+        $updatedDescription = strip_tags($term_description);
+        // Replace term occurrences with term + description.
+        $content_items[0]['#context']['value'] = str_replace($term_name, $updatedTerm . ' ( ' . $updatedDescription . ' ) ',  $content_items[0]['#context']['value']);
+        // Remove non breakable space
+         $content_items[0]['#context']['value'] = str_replace("&nbsp;", " ", $content_items[0]['#context']['value']);
+
+        // Add cache tag for the terms taxonomy.
+        if ($variables['node']->getType() === 'article') {
+          // Add the cache tag 'taxonomy_term_list'.
+          $variables['#cache']['tags'][] = 'taxonomy_term_list';
         }
       }
 
@@ -48,6 +49,6 @@ function glossary_tooltip_preprocess_node(array &$variables) {
  * Retrieve glossary terms from the taxonomy vocabulary.
  */
 function glossary_tooltip_get_glossary_terms() {
-  print_r('7');
   return \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree('glossary_tooltip');
 }
+
